@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+*.backup
+*.bak
+.mail-outbox/
+uploads/*
+!uploads/.gitkeep

@@ -1,0 +1,5261 @@
+{
+  "info": {
+    "name": "Tapi Social Media API",
+    "description": "Complete collection for the Tapi backend. Select the **Tapi Local** environment (baseUrl = http://localhost:8080). Tokens are saved automatically after login / OTP verification / refresh. Run the folders top-to-bottom (Collection Runner) – later requests reuse ids saved by earlier ones.\n\nFile uploads use `fixtures/sample.png`: set Postman's working directory to the `postman/` folder (Settings → General → Working directory) or re-select the file.\n\nOTP: after *Login with email*, copy the e-mailed code into the `otpCode` environment variable (in development with EMAIL_TRANSPORT=file look in `.mail-outbox/`).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "AUTH",
+      "description": "Registration, login (username / e-mail + OTP), refresh-token rotation, logout, password change.",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Creates an account. A taken **username** returns 409 USERNAME_TAKEN (usernames are public). A taken **e-mail** is NOT revealed: the response looks exactly like a success (anti-enumeration).",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const stamp = Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);",
+                  "pm.environment.set(\"username\", \"user_a_\" + stamp);",
+                  "pm.environment.set(\"email\", \"user_a_\" + stamp + \"@example.test\");",
+                  "if (!pm.environment.get(\"password\")) pm.environment.set(\"password\", \"CorrectHorse9!\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const d = pm.response.json().data; pm.environment.set(\"accountId\", d.externalId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register user B (editor / subscriber)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{usernameB}}\",\n  \"email\": \"{{emailB}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const stamp = Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);",
+                  "pm.environment.set(\"usernameB\", \"user_b_\" + stamp);",
+                  "pm.environment.set(\"emailB\", \"user_b_\" + stamp + \"@example.test\");",
+                  "if (!pm.environment.get(\"password\")) pm.environment.set(\"password\", \"CorrectHorse9!\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.environment.set(\"accountIdB\", pm.response.json().data.externalId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register user C (non-member, for error cases)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{usernameC}}\",\n  \"email\": \"{{emailC}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const stamp = Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);",
+                  "pm.environment.set(\"usernameC\", \"user_c_\" + stamp);",
+                  "pm.environment.set(\"emailC\", \"user_c_\" + stamp + \"@example.test\");",
+                  "if (!pm.environment.get(\"password\")) pm.environment.set(\"password\", \"CorrectHorse9!\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register user D (disposable: logout-all, password change, account deletion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{usernameD}}\",\n  \"email\": \"{{emailD}}\",\n  \"password\": \"{{passwordD}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const stamp = Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);",
+                  "pm.environment.set(\"usernameD\", \"user_d_\" + stamp);",
+                  "pm.environment.set(\"emailD\", \"user_d_\" + stamp + \"@example.test\");",
+                  "if (!pm.environment.get(\"password\")) pm.environment.set(\"password\", \"CorrectHorse9!\");",
+                  "pm.environment.set(\"passwordD\", pm.environment.get(\"password\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login with username",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Username + password. Returns tokens directly. Access token = 15 min, refresh token = 7 days.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"tokens returned\", () => { pm.expect(d.accessToken).to.be.a(\"string\"); pm.expect(d.refreshToken).to.be.a(\"string\"); });",
+                  "pm.environment.set(\"accessToken\", d.accessToken); pm.environment.set(\"refreshToken\", d.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login user B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{usernameB}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const d = pm.response.json().data; pm.environment.set(\"accessTokenB\", d.accessToken); pm.environment.set(\"refreshTokenB\", d.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login with email (sends OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "E-mail + password. A 6-digit one-time code is e-mailed (valid 10 min, single use). The code is NEVER in the response or logs. With EMAIL_TRANSPORT=file in development it is written to `.mail-outbox/`.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"verification required, no code leaked\", () => { pm.expect(d.requiresVerification).to.eql(true); pm.expect(JSON.stringify(d)).to.not.match(/\\b\\d{6}\\b/); });",
+                  "pm.environment.set(\"otpExternalId\", d.externalId); pm.environment.unset(\"otpCode\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login",
+                "verify"
+              ]
+            },
+            "description": "Paste the e-mailed code into the environment variable `otpCode` first. (Optional automation: set `otpHelperUrl` to a local helper that returns the latest code.)",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"externalId\": \"{{otpExternalId}}\",\n  \"code\": \"{{otpCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const url = pm.environment.get(\"otpHelperUrl\");",
+                  "if (url && !pm.environment.get(\"otpCode\")) {",
+                  "  pm.sendRequest(url, (e, res) => { if (!e) pm.environment.set(\"otpCode\", res.text().trim()); });",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const d = pm.response.json().data; pm.environment.set(\"accessToken\", d.accessToken); pm.environment.set(\"refreshToken\", d.refreshToken); pm.environment.unset(\"otpCode\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh (rotates the refresh token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Every refresh issues a NEW refresh token and supersedes the old one. Re-sending a superseded token revokes the whole sign-in chain (401 REFRESH_TOKEN_REUSED).",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"refresh token rotated\", () => pm.expect(d.refreshToken).to.not.eql(pm.environment.get(\"refreshToken\")));",
+                  "pm.environment.set(\"previousRefreshToken\", pm.environment.get(\"refreshToken\"));",
+                  "pm.environment.set(\"accessToken\", d.accessToken); pm.environment.set(\"refreshToken\", d.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout current (disposable session)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Ends only the sign-in chain of the supplied refresh token (this device). The pre-request script logs in a throw-away session so your main session stays usable.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{tmpRefreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.environment.get(\"baseUrl\") || pm.collectionVariables.get(\"baseUrl\");",
+                  "const post = (path, body) => new Promise((res) => pm.sendRequest({ url: base + path, method: \"POST\", header: { \"Content-Type\": \"application/json\" }, body: { mode: \"raw\", raw: JSON.stringify(body) } }, (e, r) => { try { res(e ? null : r.json()); } catch (x) { res(null); } }));",
+                  "const val = (j, k) => (j && j.data ? j.data[k] : undefined);",
+                  "const idOf = (r) => { try { return r.json().data.id; } catch (x) { return undefined; } };",
+                  "const loginD = () => post(\"/auth/login\", { identifier: pm.environment.get(\"usernameD\"), password: pm.environment.get(\"passwordD\") });",
+                  "post(\"/auth/login\", { identifier: pm.environment.get(\"username\"), password: pm.environment.get(\"password\") })",
+                  "  .then(j => pm.environment.set(\"tmpRefreshToken\", j.data.refreshToken));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"message\", () => pm.expect(pm.response.json().data.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout all (disposable user D)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout-all"
+              ]
+            },
+            "description": "Revokes every session of the account (run on disposable user D so your main user stays signed in).",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{tmpRefreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.environment.get(\"baseUrl\") || pm.collectionVariables.get(\"baseUrl\");",
+                  "const post = (path, body) => new Promise((res) => pm.sendRequest({ url: base + path, method: \"POST\", header: { \"Content-Type\": \"application/json\" }, body: { mode: \"raw\", raw: JSON.stringify(body) } }, (e, r) => { try { res(e ? null : r.json()); } catch (x) { res(null); } }));",
+                  "const val = (j, k) => (j && j.data ? j.data[k] : undefined);",
+                  "const idOf = (r) => { try { return r.json().data.id; } catch (x) { return undefined; } };",
+                  "const loginD = () => post(\"/auth/login\", { identifier: pm.environment.get(\"usernameD\"), password: pm.environment.get(\"passwordD\") });",
+                  "loginD().then(j => pm.environment.set(\"tmpRefreshToken\", val(j, \"refreshToken\")));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change password (disposable user D)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password"
+              ]
+            },
+            "description": "Verifies the current password, then revokes ALL other sessions. The response contains a fresh token pair for this device.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tmpAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{passwordD}}\",\n  \"newPassword\": \"BrandNewPass9!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.environment.get(\"baseUrl\") || pm.collectionVariables.get(\"baseUrl\");",
+                  "const post = (path, body) => new Promise((res) => pm.sendRequest({ url: base + path, method: \"POST\", header: { \"Content-Type\": \"application/json\" }, body: { mode: \"raw\", raw: JSON.stringify(body) } }, (e, r) => { try { res(e ? null : r.json()); } catch (x) { res(null); } }));",
+                  "const val = (j, k) => (j && j.data ? j.data[k] : undefined);",
+                  "const idOf = (r) => { try { return r.json().data.id; } catch (x) { return undefined; } };",
+                  "const loginD = () => post(\"/auth/login\", { identifier: pm.environment.get(\"usernameD\"), password: pm.environment.get(\"passwordD\") });",
+                  "loginD().then(j => pm.environment.set(\"tmpAccessToken\", val(j, \"accessToken\")));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"new session issued\", () => pm.expect(pm.response.json().data.accessToken).to.be.a(\"string\")); pm.environment.set(\"passwordD\", \"BrandNewPass9!\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error cases",
+          "item": [
+            {
+              "name": "(error) Login – wrong password → generic 401",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"identifier\": \"{{username}}\",\n  \"password\": \"WrongPassword1!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                      "pm.test(\"generic code\", () => pm.expect(pm.response.json().error.code).to.eql(\"INVALID_CREDENTIALS\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Login – unknown user → identical 401",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"identifier\": \"nobody_exists_here\",\n  \"password\": \"WrongPassword1!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                      "pm.test(\"same generic code\", () => pm.expect(pm.response.json().error.code).to.eql(\"INVALID_CREDENTIALS\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Login – validation error → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"wrong-field\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                      "pm.test(\"validation details\", () => pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Register – username taken → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"other_{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Refresh – reuse of a superseded token → 401 (chain revoked)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/refresh",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "refresh"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{reuseOld}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"baseUrl\") || pm.collectionVariables.get(\"baseUrl\");",
+                      "const post = (path, body) => new Promise((res) => pm.sendRequest({ url: base + path, method: \"POST\", header: { \"Content-Type\": \"application/json\" }, body: { mode: \"raw\", raw: JSON.stringify(body) } }, (e, r) => { try { res(e ? null : r.json()); } catch (x) { res(null); } }));",
+                      "const val = (j, k) => (j && j.data ? j.data[k] : undefined);",
+                      "const idOf = (r) => { try { return r.json().data.id; } catch (x) { return undefined; } };",
+                      "const loginD = () => post(\"/auth/login\", { identifier: pm.environment.get(\"usernameD\"), password: pm.environment.get(\"passwordD\") });",
+                      "loginD().then(j => { pm.environment.set(\"reuseOld\", val(j, \"refreshToken\")); return post(\"/auth/refresh\", { refreshToken: val(j, \"refreshToken\") }); });"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                      "pm.test(\"reuse detected\", () => pm.expect(pm.response.json().error.code).to.eql(\"REFRESH_TOKEN_REUSED\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Protected route without token → 401",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/profile/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "me"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PAGES",
+      "item": [
+        {
+          "name": "Create page",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/page",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Page\",\n  \"description\": \"Created from the Postman collection\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const d = pm.response.json().data; pm.environment.set(\"pageId\", d.id);",
+                  "pm.test(\"creator is the admin, default picture\", () => { pm.expect(d.adminAccountId).to.eql(pm.environment.get(\"accountId\")); pm.expect(d.picture).to.eql(\"/uploads/defaults/page.png\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List my pages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/page/mine?size=20&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "mine"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"contains my page\", () => pm.expect(pm.response.json().data.items.some(p => p.id === pm.environment.get(\"pageId\"))).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/page/{{pageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "{{pageId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update page",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/page/{{pageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "{{pageId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Page (renamed)\",\n  \"description\": \"Updated description\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"renamed\", () => pm.expect(pm.response.json().data.name).to.eql(\"Postman Page (renamed)\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete page (throw-away page)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/page/{{tmpPageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "{{tmpPageId}}"
+              ]
+            },
+            "description": "Admin only. The page disappears immediately; members, subscriptions, posts, comments, reactions, images and cache entries are removed by a tracked background job (see CLEANUP).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.environment.get(\"baseUrl\") || pm.collectionVariables.get(\"baseUrl\");",
+                  "const post = (path, body) => new Promise((res) => pm.sendRequest({ url: base + path, method: \"POST\", header: { \"Content-Type\": \"application/json\" }, body: { mode: \"raw\", raw: JSON.stringify(body) } }, (e, r) => { try { res(e ? null : r.json()); } catch (x) { res(null); } }));",
+                  "const val = (j, k) => (j && j.data ? j.data[k] : undefined);",
+                  "const idOf = (r) => { try { return r.json().data.id; } catch (x) { return undefined; } };",
+                  "const loginD = () => post(\"/auth/login\", { identifier: pm.environment.get(\"usernameD\"), password: pm.environment.get(\"passwordD\") });",
+                  "pm.sendRequest({ url: base + \"/page\", method: \"POST\", header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + pm.environment.get(\"accessToken\") }, body: { mode: \"raw\", raw: JSON.stringify({ name: \"Throw-away page\" }) } },",
+                  "  (e, r) => pm.environment.set(\"tmpPageId\", idOf(r)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 202\", () => pm.response.to.have.status(202));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.environment.set(\"pageCleanupJobId\", pm.response.json().data.cleanupJobId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error cases",
+          "item": [
+            {
+              "name": "(error) Update page as non-admin → 403",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/page/{{pageId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "page",
+                    "{{pageId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessTokenB}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"hijack\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Malformed page id → 400",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/page/not-a-uuid",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "page",
+                    "not-a-uuid"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Unknown page → 404",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/page/00000000-0000-4000-8000-000000000000",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "page",
+                    "00000000-0000-4000-8000-000000000000"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MEMBERS",
+      "item": [
+        {
+          "name": "List members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/page/{{pageId}}/members?size=20&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "{{pageId}}",
+                "members"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"exactly one admin\", () => pm.expect(pm.response.json().data.items.filter(m => m.role === \"admin\").length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add editor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/page/{{pageId}}/members/editors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "{{pageId}}",
+                "members",
+                "editors"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{usernameB}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"role editor\", () => pm.expect(pm.response.json().data.role).to.eql(\"editor\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remove editor",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/page/{{pageId}}/members/editors/{{usernameB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "{{pageId}}",
+                "members",
+                "editors",
+                "{{usernameB}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add editor (again)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/page/{{pageId}}/members/editors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "{{pageId}}",
+                "members",
+                "editors"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{usernameB}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Transfer admin (to user B)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/page/{{pageId}}/members/admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "{{pageId}}",
+                "members",
+                "admin"
+              ]
+            },
+            "description": "Only the current admin; target must be an existing editor. One atomic compare-and-set on the page moves the admin pointer – there is never a moment with zero or two admins.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{usernameB}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"new admin\", () => pm.expect(pm.response.json().data.newAdminAccountId).to.eql(pm.environment.get(\"accountIdB\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Transfer admin back (as user B → user A)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/page/{{pageId}}/members/admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "{{pageId}}",
+                "members",
+                "admin"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Leave page (editor, throw-away)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/page/{{pageId}}/members/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "{{pageId}}",
+                "members",
+                "me"
+              ]
+            },
+            "description": "Editors may leave. The admin may not (409 ADMIN_CANNOT_LEAVE).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add editor (restore user B)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/page/{{pageId}}/members/editors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "{{pageId}}",
+                "members",
+                "editors"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{usernameB}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error cases",
+          "item": [
+            {
+              "name": "(error) Add editor as non-admin → 403",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/page/{{pageId}}/members/editors",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "page",
+                    "{{pageId}}",
+                    "members",
+                    "editors"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessTokenB}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{usernameB}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Add existing member → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/page/{{pageId}}/members/editors",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "page",
+                    "{{pageId}}",
+                    "members",
+                    "editors"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{usernameB}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Remove the admin → 400",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/page/{{pageId}}/members/editors/{{username}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "page",
+                    "{{pageId}}",
+                    "members",
+                    "editors",
+                    "{{username}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Admin cannot leave → 409",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/page/{{pageId}}/members/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "page",
+                    "{{pageId}}",
+                    "members",
+                    "me"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Transfer to self → 400",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/page/{{pageId}}/members/admin",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "page",
+                    "{{pageId}}",
+                    "members",
+                    "admin"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{username}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Transfer as editor → 403",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/page/{{pageId}}/members/admin",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "page",
+                    "{{pageId}}",
+                    "members",
+                    "admin"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessTokenB}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{usernameB}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SUBSCRIPTIONS",
+      "item": [
+        {
+          "name": "Subscribe (user B)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions"
+              ]
+            },
+            "description": "Idempotent: 201 the first time, 200 afterwards; never a duplicate.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pageId\": \"{{pageId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Subscribe again (idempotent)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pageId\": \"{{pageId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List subscriptions (mine)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/mine?size=20&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "mine"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"page listed\", () => pm.expect(pm.response.json().data.items.some(p => p.id === pm.environment.get(\"pageId\"))).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List subscribers (admin only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/page/{{pageId}}/subscribers?size=20&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "page",
+                "{{pageId}}",
+                "subscribers"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"no e-mail leaked\", () => pm.expect(pm.response.text()).to.not.include(\"@example.test\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unsubscribe (throw-away subscription)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/{{tmpPageId2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "{{tmpPageId2}}"
+              ]
+            },
+            "description": "Idempotent too: unsubscribing from a page you are not subscribed to returns 200 with removed=false.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.environment.get(\"baseUrl\") || pm.collectionVariables.get(\"baseUrl\");",
+                  "const post = (path, body) => new Promise((res) => pm.sendRequest({ url: base + path, method: \"POST\", header: { \"Content-Type\": \"application/json\" }, body: { mode: \"raw\", raw: JSON.stringify(body) } }, (e, r) => { try { res(e ? null : r.json()); } catch (x) { res(null); } }));",
+                  "const val = (j, k) => (j && j.data ? j.data[k] : undefined);",
+                  "const idOf = (r) => { try { return r.json().data.id; } catch (x) { return undefined; } };",
+                  "const loginD = () => post(\"/auth/login\", { identifier: pm.environment.get(\"usernameD\"), password: pm.environment.get(\"passwordD\") });",
+                  "pm.sendRequest({ url: base + \"/page\", method: \"POST\", header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + pm.environment.get(\"accessToken\") }, body: { mode: \"raw\", raw: JSON.stringify({ name: \"Unsub page\" }) } }, (e, r) => {",
+                  "  const id = idOf(r); pm.environment.set(\"tmpPageId2\", id);",
+                  "  pm.sendRequest({ url: base + \"/subscriptions\", method: \"POST\", header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + pm.environment.get(\"accessTokenB\") }, body: { mode: \"raw\", raw: JSON.stringify({ pageId: id }) } }, () => {});",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"removed\", () => pm.expect(pm.response.json().data.removed).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unsubscribe again (harmless)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/{{tmpPageId2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "{{tmpPageId2}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"nothing to remove\", () => pm.expect(pm.response.json().data.removed).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error cases",
+          "item": [
+            {
+              "name": "(error) Subscribers list as non-admin → 403",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/subscriptions/page/{{pageId}}/subscribers",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "subscriptions",
+                    "page",
+                    "{{pageId}}",
+                    "subscribers"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessTokenB}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Subscribe to unknown page → 404",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/subscriptions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "subscriptions"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessTokenB}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pageId\": \"00000000-0000-4000-8000-000000000000\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "POSTS",
+      "item": [
+        {
+          "name": "Create post",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/post",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "post"
+              ]
+            },
+            "description": "multipart/form-data. Only page members (admin/editors) can publish.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "pageId",
+                  "value": "{{pageId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "content",
+                  "value": "Hello from Postman!",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const d = pm.response.json().data; pm.environment.set(\"postId\", d.id); pm.test(\"author + ISO timestamps\", () => { pm.expect(d.author.username).to.eql(pm.environment.get(\"username\")); pm.expect(d.createdAt).to.match(/Z$/); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create post with image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/post",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "post"
+              ]
+            },
+            "description": "Up to 10 images, max 5 MB each, JPEG/PNG/GIF/WebP/BMP (validated by file signature).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "pageId",
+                  "value": "{{pageId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "content",
+                  "value": "Post with a picture",
+                  "type": "text"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": "fixtures/sample.png"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const d = pm.response.json().data; pm.environment.set(\"postWithImageId\", d.id); pm.test(\"image url returned\", () => pm.expect(d.images[0]).to.match(/^\\/uploads\\/posts\\//));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List posts of a page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/post/page/{{pageId}}?size=10&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "post",
+                "page",
+                "{{pageId}}"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "10",
+                  "description": "1-50, default 20"
+                },
+                {
+                  "key": "position",
+                  "value": "0",
+                  "description": "zero-based offset"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const p = pm.response.json().data.pageInfo; pm.test(\"page info\", () => pm.expect(p).to.have.keys(\"size\", \"position\", \"hasNextPage\", \"nextPosition\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List my posts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/post/me?size=10&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "post",
+                "me"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get post",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/post/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "post",
+                "{{postId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update post",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/post/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "post",
+                "{{postId}}"
+              ]
+            },
+            "description": "Author only. Send new `images` files to REPLACE the images (old files are deleted), or `removeImages=true` to clear them.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "content",
+                  "value": "Edited from Postman",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"edited\", () => pm.expect(pm.response.json().data.content).to.eql(\"Edited from Postman\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete post (throw-away post)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/post/{{tmpPostId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "post",
+                "{{tmpPostId}}"
+              ]
+            },
+            "description": "Author or page admin. Comments, replies, reactions, images and cache entries are removed by a tracked cleanup job.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.environment.get(\"baseUrl\") || pm.collectionVariables.get(\"baseUrl\");",
+                  "const post = (path, body) => new Promise((res) => pm.sendRequest({ url: base + path, method: \"POST\", header: { \"Content-Type\": \"application/json\" }, body: { mode: \"raw\", raw: JSON.stringify(body) } }, (e, r) => { try { res(e ? null : r.json()); } catch (x) { res(null); } }));",
+                  "const val = (j, k) => (j && j.data ? j.data[k] : undefined);",
+                  "const idOf = (r) => { try { return r.json().data.id; } catch (x) { return undefined; } };",
+                  "const loginD = () => post(\"/auth/login\", { identifier: pm.environment.get(\"usernameD\"), password: pm.environment.get(\"passwordD\") });",
+                  "pm.sendRequest({ url: base + \"/post\", method: \"POST\", header: { Authorization: \"Bearer \" + pm.environment.get(\"accessToken\") }, body: { mode: \"formdata\", formdata: [{ key: \"pageId\", value: pm.environment.get(\"pageId\") }, { key: \"content\", value: \"to be deleted\" }] } },",
+                  "  (e, r) => pm.environment.set(\"tmpPostId\", idOf(r)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 202\", () => pm.response.to.have.status(202));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.environment.set(\"cleanupJobId\", pm.response.json().data.cleanupJobId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error cases",
+          "item": [
+            {
+              "name": "(error) Update someone else's post → 403",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/post/{{postId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "post",
+                    "{{postId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessTokenB}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "content",
+                      "value": "x",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Empty post → 400",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/post",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "post"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "pageId",
+                      "value": "{{pageId}}",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Post as non-member → 403",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/post",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "post"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessTokenC}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "pageId",
+                      "value": "{{pageId}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "content",
+                      "value": "x",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"baseUrl\") || pm.collectionVariables.get(\"baseUrl\");",
+                      "const post = (path, body) => new Promise((res) => pm.sendRequest({ url: base + path, method: \"POST\", header: { \"Content-Type\": \"application/json\" }, body: { mode: \"raw\", raw: JSON.stringify(body) } }, (e, r) => { try { res(e ? null : r.json()); } catch (x) { res(null); } }));",
+                      "const val = (j, k) => (j && j.data ? j.data[k] : undefined);",
+                      "const idOf = (r) => { try { return r.json().data.id; } catch (x) { return undefined; } };",
+                      "const loginD = () => post(\"/auth/login\", { identifier: pm.environment.get(\"usernameD\"), password: pm.environment.get(\"passwordD\") });",
+                      "post(\"/auth/login\", { identifier: pm.environment.get(\"usernameC\"), password: pm.environment.get(\"password\") }).then(j => pm.environment.set(\"accessTokenC\", val(j, \"accessToken\")));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Unknown post → 404",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/post/00000000-0000-4000-8000-000000000000",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "post",
+                    "00000000-0000-4000-8000-000000000000"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "FEED",
+      "item": [
+        {
+          "name": "Get feed (user B, subscribed)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/feed?size=10&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "feed"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Only posts of pages the caller is subscribed to, newest first. No recommendations, no trending.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const items = pm.response.json().data.items;",
+                  "pm.test(\"only subscribed pages\", () => pm.expect(items.every(i => i.page && i.page.id === pm.environment.get(\"pageId\"))).to.eql(true));",
+                  "pm.test(\"page + author display data\", () => { pm.expect(items[0].page.name).to.be.a(\"string\"); pm.expect(items[0].author.username).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get feed – next page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/feed?size=1&position=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "feed"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "1"
+                },
+                {
+                  "key": "position",
+                  "value": "1"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(error) Feed – invalid pagination → 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/feed?size=500&position=-1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "feed"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "500"
+                },
+                {
+                  "key": "position",
+                  "value": "-1"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "COMMENTS",
+      "item": [
+        {
+          "name": "Create comment (user B)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comments/post/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comments",
+                "post",
+                "{{postId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Great post!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.environment.set(\"commentId\", pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reply to comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comments/post/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comments",
+                "post",
+                "{{postId}}"
+              ]
+            },
+            "description": "Maximum reply depth is 1: replying to a reply returns 400 REPLY_DEPTH_EXCEEDED.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Thanks!\",\n  \"parentCommentId\": \"{{commentId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.environment.set(\"replyId\", pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List comments (top-level, paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/comments/post/{{postId}}?size=20&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comments",
+                "post",
+                "{{postId}}"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"replyCount present\", () => pm.expect(pm.response.json().data.items[0].replyCount).to.be.a(\"number\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List replies of a comment (paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/comments/{{commentId}}/replies?size=20&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comments",
+                "{{commentId}}",
+                "replies"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Edit comment (author)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comments/{{commentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comments",
+                "{{commentId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Great post! (edited)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete comment (page admin can delete any)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/comments/{{commentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comments",
+                "{{commentId}}"
+              ]
+            },
+            "description": "Author, or the admin of the page. Deleting a top-level comment also deletes its replies.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"replies removed too\", () => pm.expect(pm.response.json().data.deletedReplies).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error cases",
+          "item": [
+            {
+              "name": "(error) Reply to a reply → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/comments/post/{{postId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "comments",
+                    "post",
+                    "{{postId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"content\": \"nested\",\n  \"parentCommentId\": \"{{replyId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"baseUrl\") || pm.collectionVariables.get(\"baseUrl\");",
+                      "const post = (path, body) => new Promise((res) => pm.sendRequest({ url: base + path, method: \"POST\", header: { \"Content-Type\": \"application/json\" }, body: { mode: \"raw\", raw: JSON.stringify(body) } }, (e, r) => { try { res(e ? null : r.json()); } catch (x) { res(null); } }));",
+                      "const val = (j, k) => (j && j.data ? j.data[k] : undefined);",
+                      "const idOf = (r) => { try { return r.json().data.id; } catch (x) { return undefined; } };",
+                      "const loginD = () => post(\"/auth/login\", { identifier: pm.environment.get(\"usernameD\"), password: pm.environment.get(\"passwordD\") });",
+                      "const h = { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + pm.environment.get(\"accessTokenB\") };",
+                      "pm.sendRequest({ url: base + \"/comments/post/\" + pm.environment.get(\"postId\"), method: \"POST\", header: h, body: { mode: \"raw\", raw: JSON.stringify({ content: \"parent\" }) } }, (e, r) => {",
+                      "  const parent = idOf(r);",
+                      "  pm.sendRequest({ url: base + \"/comments/post/\" + pm.environment.get(\"postId\"), method: \"POST\", header: h, body: { mode: \"raw\", raw: JSON.stringify({ content: \"reply\", parentCommentId: parent }) } }, (e2, r2) => pm.environment.set(\"replyId\", idOf(r2)));",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                      "pm.test(\"depth rule\", () => pm.expect(pm.response.json().error.code).to.eql(\"REPLY_DEPTH_EXCEEDED\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Empty comment → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/comments/post/{{postId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "comments",
+                    "post",
+                    "{{postId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"content\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Edit someone else's comment → 403",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/comments/{{replyId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "comments",
+                    "{{replyId}}"
+                  ]
+                },
+                "description": "{{replyId}} was written by user B; user A (even as page admin) may not edit it – editing is author-only.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"content\": \"hijack\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "REACTIONS",
+      "item": [
+        {
+          "name": "Add / change reaction (like)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reactions/post/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reactions",
+                "post",
+                "{{postId}}"
+              ]
+            },
+            "description": "Types: like, love, haha, wow, sad, angry. One reaction per user per post; sending another type REPLACES the previous one.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"like\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"my reaction\", () => pm.expect(pm.response.json().data.myReaction).to.eql(\"like\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change reaction (love)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reactions/post/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reactions",
+                "post",
+                "{{postId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"love\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const d = pm.response.json().data; pm.test(\"replaced, not added\", () => { pm.expect(d.counts.love).to.eql(1); pm.expect(d.counts.like).to.eql(0); pm.expect(d.counts.total).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List reaction users (paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reactions/post/{{postId}}?size=20&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reactions",
+                "post",
+                "{{postId}}"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const d = pm.response.json().data; pm.test(\"counts + myReaction + items\", () => { pm.expect(d.counts).to.have.property(\"total\"); pm.expect(d).to.have.property(\"myReaction\"); pm.expect(d.items).to.be.an(\"array\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter reactions by type (love)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reactions/post/{{postId}}?type=love&size=20&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reactions",
+                "post",
+                "{{postId}}"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "love"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"only love\", () => pm.expect(pm.response.json().data.items.every(i => i.type === \"love\")).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remove reaction",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reactions/post/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reactions",
+                "post",
+                "{{postId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessTokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"removed\", () => pm.expect(pm.response.json().data.myReaction).to.eql(null));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error cases",
+          "item": [
+            {
+              "name": "(error) Invalid reaction type → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reactions/post/{{postId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reactions",
+                    "post",
+                    "{{postId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessTokenB}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"dislike\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) Unknown post → 404",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reactions/post/00000000-0000-4000-8000-000000000000",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reactions",
+                    "post",
+                    "00000000-0000-4000-8000-000000000000"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessTokenB}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"like\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "UPLOADS",
+      "item": [
+        {
+          "name": "Upload profile picture",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/profile/picture",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "picture"
+              ]
+            },
+            "description": "Field name `image`. Real file signature is checked (JPEG/PNG/GIF/WebP/BMP), max 5 MB. The previous picture is deleted.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "fixtures/sample.png"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const url = pm.response.json().data.picture; pm.environment.set(\"profilePictureUrl\", url); pm.test(\"served from /uploads\", () => pm.expect(url).to.match(/^\\/uploads\\/profiles\\//));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload page picture",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/page/{{pageId}}/picture",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "{{pageId}}",
+                "picture"
+              ]
+            },
+            "description": "Page admin only. The previous picture is deleted.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "fixtures/sample.png"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.environment.set(\"pagePictureUrl\", pm.response.json().data.picture);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload post image (replace images of a post)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/post/{{postWithImageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "post",
+                "{{postWithImageId}}"
+              ]
+            },
+            "description": "Uploading new `images` replaces the post's images; old files are deleted.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": "fixtures/sample.png"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.environment.set(\"postImageUrl\", pm.response.json().data.images[0]);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fetch uploaded image (public, no auth)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}{{profilePictureUrl}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"content type + nosniff + cache\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.eql(\"image/png\");",
+                  "  pm.expect(pm.response.headers.get(\"X-Content-Type-Options\")).to.eql(\"nosniff\");",
+                  "  pm.expect(pm.response.headers.get(\"Cache-Control\")).to.include(\"max-age\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fetch default profile picture",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/uploads/defaults/profile.png",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "defaults",
+                "profile.png"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fetch default page picture",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/uploads/defaults/page.png",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "defaults",
+                "page.png"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error cases",
+          "item": [
+            {
+              "name": "(error) Fake image (text renamed .png) → 415",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/profile/picture",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "picture"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": "fixtures/not-an-image.png"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 415\", () => pm.response.to.have.status(415));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                      "pm.test(\"signature check\", () => pm.expect(pm.response.json().error.code).to.eql(\"INVALID_IMAGE_TYPE\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(error) No file → 400",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/profile/picture",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "picture"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "HEALTH",
+      "item": [
+        {
+          "name": "Health + cache health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Database / Redis status plus cache hit ratio, cache key count and eviction count.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "const c = pm.response.json().cache; pm.test(\"cache stats\", () => { pm.expect(c).to.have.keys(\"hitRatio\", \"hits\", \"misses\", \"keyCount\", \"evictionCount\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CLEANUP",
+      "item": [
+        {
+          "name": "Get cleanup job status (post deletion)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/internal/cleanup/{{cleanupJobId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "cleanup",
+                "{{cleanupJobId}}"
+              ]
+            },
+            "description": "Status of a cleanup job you requested: pending | processing | completed | failed. Jobs are created by deleting a post, a page or your account.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"valid status\", () => pm.expect([\"pending\", \"processing\", \"completed\", \"failed\"]).to.include(pm.response.json().data.status));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get cleanup job status (page deletion)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/internal/cleanup/{{pageCleanupJobId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "cleanup",
+                "{{pageCleanupJobId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"valid status\", () => pm.expect([\"pending\", \"processing\", \"completed\", \"failed\"]).to.include(pm.response.json().data.status));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(error) Unknown / foreign job → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/internal/cleanup/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "cleanup",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete account (disposable user D)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/account",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "account"
+              ]
+            },
+            "description": "Account and sessions disappear immediately; all related data is removed by a background cleanup job (returned as cleanupJobId).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tmpAccessToken2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.environment.get(\"baseUrl\") || pm.collectionVariables.get(\"baseUrl\");",
+                  "const post = (path, body) => new Promise((res) => pm.sendRequest({ url: base + path, method: \"POST\", header: { \"Content-Type\": \"application/json\" }, body: { mode: \"raw\", raw: JSON.stringify(body) } }, (e, r) => { try { res(e ? null : r.json()); } catch (x) { res(null); } }));",
+                  "const val = (j, k) => (j && j.data ? j.data[k] : undefined);",
+                  "const idOf = (r) => { try { return r.json().data.id; } catch (x) { return undefined; } };",
+                  "const loginD = () => post(\"/auth/login\", { identifier: pm.environment.get(\"usernameD\"), password: pm.environment.get(\"passwordD\") });",
+                  "loginD().then(j => pm.environment.set(\"tmpAccessToken2\", val(j, \"accessToken\")));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 202\", () => pm.response.to.have.status(202));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"job id\", () => pm.expect(pm.response.json().data.cleanupJobId).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SEED DEMO (run `yarn seed` first)",
+      "description": "Uses the data created by `yarn seed` to demonstrate pagination.",
+      "item": [
+        {
+          "name": "Seed: login as seed_operator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"seed_operator\",\n  \"password\": \"SeedOperator123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.environment.set(\"seedAccessToken\", pm.response.json().data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed: login as seed_subscriber_1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"seed_subscriber_1\",\n  \"password\": \"SeedUser123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.environment.set(\"seedSubscriberToken\", pm.response.json().data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed: members of the seed page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/page/768c4266-ad8d-49f6-845b-5f14a15630f2/members?size=50&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "page",
+                "768c4266-ad8d-49f6-845b-5f14a15630f2",
+                "members"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "50"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{seedAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"1 admin + 3 editors\", () => pm.expect(pm.response.json().data.items.length).to.eql(4));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed: subscribers page 1 (size=50)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/page/768c4266-ad8d-49f6-845b-5f14a15630f2/subscribers?size=50&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "page",
+                "768c4266-ad8d-49f6-845b-5f14a15630f2",
+                "subscribers"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "50"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{seedAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"has next page (56 subscribers > 50)\", () => pm.expect(pm.response.json().data.pageInfo.hasNextPage).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed: subscribers page 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/page/768c4266-ad8d-49f6-845b-5f14a15630f2/subscribers?size=50&position=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "page",
+                "768c4266-ad8d-49f6-845b-5f14a15630f2",
+                "subscribers"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "50"
+                },
+                {
+                  "key": "position",
+                  "value": "50"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{seedAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"last page\", () => pm.expect(pm.response.json().data.pageInfo.hasNextPage).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed: feed page 1 (size=20)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/feed?size=20&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "feed"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{seedSubscriberToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"20 items, more available\", () => { const d = pm.response.json().data; pm.expect(d.items.length).to.eql(20); pm.expect(d.pageInfo.nextPosition).to.eql(20); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed: feed page 3 (position=40)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/feed?size=20&position=40",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "feed"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "position",
+                  "value": "40"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{seedSubscriberToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"last page of 60 posts\", () => { const d = pm.response.json().data; pm.expect(d.items.length).to.eql(20); pm.expect(d.pageInfo.hasNextPage).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed: comments of post 1 (55 top-level)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/comments/post/79dca109-fbd2-4f51-a20f-dc557dcad32b?size=50&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comments",
+                "post",
+                "79dca109-fbd2-4f51-a20f-dc557dcad32b"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "50"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{seedSubscriberToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"50 + next\", () => { const d = pm.response.json().data; pm.expect(d.items.length).to.eql(50); pm.expect(d.pageInfo.hasNextPage).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed: reactions of post 1 filtered by 'like'",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reactions/post/79dca109-fbd2-4f51-a20f-dc557dcad32b?type=like&size=5&position=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reactions",
+                "post",
+                "79dca109-fbd2-4f51-a20f-dc557dcad32b"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "like"
+                },
+                {
+                  "key": "size",
+                  "value": "5"
+                },
+                {
+                  "key": "position",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{seedSubscriberToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trace header present\", () => pm.expect(pm.response.headers.get(\"X-Tapi-Trace-Ref\")).to.be.a(\"string\"));",
+                  "pm.test(\"all like\", () => pm.expect(pm.response.json().data.items.every(i => i.type === \"like\")).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
